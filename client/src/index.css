@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    @apply font-sans text-ink-700 antialiased;
+    background-color: #f6fbff;
+    background-image:
+      radial-gradient(1100px 600px at 8% -10%, rgba(14,139,224,0.10), transparent 60%),
+      radial-gradient(900px 500px at 95% 0%, rgba(15,191,161,0.10), transparent 55%),
+      radial-gradient(700px 500px at 50% 110%, rgba(14,139,224,0.06), transparent 60%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  * { box-sizing: border-box; }
+  h1, h2, h3, h4 { @apply text-ink-900; }
+  ::selection { background: rgb(54 168 245 / 0.25); color: #0d4068; }
+}
+
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-white border border-ink-200 rounded-2xl shadow-soft;
+  }
+  .card-hover {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-liftA hover:border-brand-200;
+  }
+  .glass-card { @apply card p-5; }
+  .glass-strong {
+    @apply rounded-2xl border border-white/60 shadow-liftA
+           bg-gradient-to-br from-white to-brand-50;
+  }
+  .glass { @apply bg-white/70 border border-ink-200 backdrop-blur-md; }
+
+  /* Image background for product/accessory tiles — subtle brand gradient */
+  .tile-bg {
+    background:
+      radial-gradient(140px 100px at 30% 25%, rgba(54,168,245,0.18), transparent 70%),
+      radial-gradient(160px 110px at 75% 80%, rgba(15,191,161,0.16), transparent 70%),
+      linear-gradient(180deg, #f0f9ff 0%, #ecf6ff 100%);
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5
+           bg-gradient-to-l from-accent-500 to-brand-500 text-white font-bold
+           shadow-liftA hover:shadow-liftB hover:scale-[1.02]
+           transition-all duration-200;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2
+           bg-white border border-ink-200 text-ink-700 font-semibold
+           hover:bg-ink-50 hover:border-brand-200 transition-all duration-200;
+  }
+  .btn-icon {
+    @apply inline-flex items-center justify-center w-9 h-9 rounded-lg
+           bg-white border border-ink-200 text-ink-700 hover:bg-ink-50 transition;
+  }
+
+  /* Form controls */
+  .input {
+    @apply w-full bg-white border border-ink-300 rounded-lg px-3 py-2
+           outline-none text-ink-900 placeholder:text-ink-400
+           focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition;
+  }
+  .input::placeholder { color: #94a3b8; }
+
+  /* Chips & prices */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-ink-100 border border-ink-200
+           px-2.5 py-0.5 text-xs font-semibold text-ink-700;
+  }
+  .chip-brand   { @apply chip bg-brand-50 border-brand-200 text-brand-700; }
+  .chip-accent  { @apply chip bg-accent-50 border-accent-400/40 text-accent-700; }
+  .chip-warn    { @apply chip bg-rose-50 border-rose-200 text-rose-700; }
+  .chip-good    { @apply chip bg-emerald-50 border-emerald-200 text-emerald-700; }
+
+  .price-old { @apply text-ink-400 line-through text-sm; }
+  .price-new { @apply text-2xl font-extrabold text-brand-700; }
+
+  /* Section heading with eyebrow */
+  .section-title { @apply text-2xl md:text-3xl font-extrabold text-ink-900; }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-bold tracking-wider uppercase
+           text-brand-600 mb-1;
+  }
+  .eyebrow::before {
+    content: ''; width: 18px; height: 2px; background: currentColor; border-radius: 2px;
+  }
+
+  .shine-wrap { position: relative; overflow: hidden; }
+
+  /* Decorative water drop bubbles for hero */
+  .bubbles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .bubble {
+    position: absolute; border-radius: 9999px; opacity: 0.5;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(54,168,245,0.4));
+    animation: bubbleFloat 8s ease-in-out infinite;
+  }
+  @keyframes bubbleFloat {
+    0%,100% { transform: translateY(0) scale(1); }
+    50%     { transform: translateY(-18px) scale(1.05); }
+  }
+
+  /* Top contact strip */
+  .topbar {
+    @apply bg-gradient-to-l from-brand-700 to-brand-600 text-white text-xs;
+  }
+  .topbar a { @apply hover:text-white/90; }
+}
+
+/* Custom scrollbar (subtle) */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-track { background: transparent; }
