@@ -9,6 +9,7 @@ const empty: ServerPackage = {
   badge: null, warranty: null, image_url: null,
   components: [], gifts: [],
   display_order: 0, visible: true,
+  rating_value: null, rating_count: 0,
 };
 
 export default function PackagesAdmin() {
@@ -135,6 +136,9 @@ export default function PackagesAdmin() {
                   </span>
                   {p.price_old != null && <span className="line-through text-ink-400">{p.price_old}</span>}
                   {p.badge && <span className="chip">{p.badge}</span>}
+                  {p.rating_value != null && (
+                    <span className="chip">⭐ {p.rating_value.toFixed(1)} ({p.rating_count})</span>
+                  )}
                 </div>
               </div>
               <VisibilityToggle visible={p.visible} onChange={() => toggleVisible(p)} />

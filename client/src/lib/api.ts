@@ -30,6 +30,8 @@ export type ServerPackage = {
   gifts: string[];
   display_order: number;
   visible: boolean;
+  rating_value: number | null;
+  rating_count: number;
 };
 
 export type ServerAccessory = {
@@ -43,6 +45,19 @@ export type ServerAccessory = {
   image_url: string | null;
   display_order: number;
   visible: boolean;
+  rating_value: number | null;
+  rating_count: number;
+};
+
+export type Review = {
+  id: number;
+  item_type: 'package' | 'accessory';
+  item_slug: string;
+  customer_name: string;
+  rating: number;
+  comment: string | null;
+  approved: boolean;
+  created_at: string;
 };
 
 export type ServerCategory = {
@@ -70,6 +85,8 @@ export function toPackage(p: ServerPackage): Package {
     gifts: p.gifts ?? [],
     warranty: p.warranty ?? '',
     imageUrl: imageUrl(p.image_url),
+    rating: p.rating_value ?? undefined,
+    ratingCount: p.rating_count ?? 0,
   };
 }
 
@@ -83,6 +100,8 @@ export function toAccessory(a: ServerAccessory): Accessory {
     note: a.note ?? undefined,
     freeShipping: a.free_shipping,
     imageUrl: imageUrl(a.image_url),
+    rating: a.rating_value ?? undefined,
+    ratingCount: a.rating_count ?? 0,
   };
 }
 
@@ -95,6 +114,18 @@ export const api = {
   package: (slug: string) => get<ServerPackage>(`/packages/${slug}`),
   accessories: (category?: string) =>
     get<ServerAccessory[]>(`/accessories${category ? `?category=${category}` : ''}`),
+  reviews: (itemType: 'package' | 'accessory', itemSlug: string) =>
+    get<Review[]>(`/reviews?item_type=${itemType}&item_slug=${encodeURIComponent(itemSlug)}`),
+  submitReview: async (body: { item_type: 'package' | 'accessory'; item_slug: string; customer_name: string; rating: number; comment: string | null }) => {
+    const res = await fetch(`${API_BASE}/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error ?? 'فشل إرسال التقييم');
+    return data as { ok: true; review: Review };
+  },
 };
 
 // ----------------- Admin -----------------
@@ -169,6 +200,12 @@ export const admin = {
 
   changePassword: (current: string, next: string) =>
     authed<{ ok: true }>('/admin/change-password', { method: 'POST', body: JSON.stringify({ current, next }) }),
+
+  reviews: () => authed<Review[]>('/admin/reviews'),
+  approveReview: (id: number) =>
+    authed<{ ok: true }>(`/admin/reviews/${id}/approve`, { method: 'PUT' }),
+  deleteReview: (id: number) =>
+    authed<{ ok: true }>(`/admin/reviews/${id}`, { method: 'DELETE' }),
 
   upload: async (file: File): Promise<{ url: string }> => {
     const token = getAdminToken();

@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes, Link } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import TopBar from './components/TopBar';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -9,8 +10,21 @@ import Category from './pages/Category';
 import Accessories from './pages/Accessories';
 import AccessoryDetail from './pages/AccessoryDetail';
 import Contact from './pages/Contact';
-import AdminLogin from './admin/AdminLogin';
-import AdminDashboard from './admin/AdminDashboard';
+
+// Admin code is lazy-loaded: it has its own dependency-heavy pages
+// (forms, upload UI, etc.) that a regular site visitor never needs.
+// Without this, every public visitor downloads the full admin bundle
+// on first load.
+const AdminLogin = lazy(() => import('./admin/AdminLogin'));
+const AdminDashboard = lazy(() => import('./admin/AdminDashboard'));
+
+function AdminFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center text-lg">
+      جار التحميل...
+    </div>
+  );
+}
 
 function NotFound() {
   return (
@@ -28,8 +42,22 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/*" element={<AdminDashboard />} />
+        <Route
+          path="/admin/login"
+          element={(
+            <Suspense fallback={<AdminFallback />}>
+              <AdminLogin />
+            </Suspense>
+          )}
+        />
+        <Route
+          path="/admin/*"
+          element={(
+            <Suspense fallback={<AdminFallback />}>
+              <AdminDashboard />
+            </Suspense>
+          )}
+        />
         <Route path="*" element={<PublicShell />} />
       </Routes>
     </BrowserRouter>

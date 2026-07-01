@@ -1,7 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const SECRET = process.env.JWT_SECRET ?? 'dev-secret';
+// No fallback here on purpose: index.ts already refuses to boot if
+// JWT_SECRET is missing/weak, so by the time this module is used the
+// env var is guaranteed to be set correctly.
+const SECRET = process.env.JWT_SECRET as string;
 
 export type AuthPayload = { sub: string; username: string };
 

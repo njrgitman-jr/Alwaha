@@ -2,41 +2,55 @@ import { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
-import { join, dirname, extname } from 'node:path';
+import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync, mkdirSync } from 'node:fs';
+import { writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { fileTypeFromBuffer } from 'file-type';
+import sharp from 'sharp';
 import { requireAuth } from '../auth.js';
+import { auditLog } from '../auditLog.js';
 import {
   deleteAccessory, deleteCategory, deletePackage,
   getAccessories, getCategories, getPackages, getSettings,
   findAdminByUsername, updateAdminPassword,
   updateSettings, upsertAccessory, upsertCategory, upsertPackage,
+  getAllReviews, approveReview, deleteReview,
 } from '../store.js';
 import { useJsonFallback } from '../db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const UPLOAD_DIR = join(__dirname, '..', '..', 'public', 'uploads');
+// Allow tests to redirect uploads to a temp dir instead of polluting
+// the real public/uploads folder.
+const UPLOAD_DIR = process.env.UPLOAD_DIR_OVERRIDE
+  ? process.env.UPLOAD_DIR_OVERRIDE
+  : join(__dirname, '..', '..', 'public', 'uploads');
 if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
 
+// SVG is deliberately NOT allowed: it's XML and can carry embedded
+// <script>, making it a stored-XSS vector once served back from
+// /uploads. Raster formats only.
+const ALLOWED_EXT_BY_MIME: Record<string, string> = {
+  'image/png': '.png',
+  'image/jpeg': '.jpg',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+};
+
+// Use memory storage so we can sniff the real file content (magic
+// bytes) before anything touches disk. Trusting the client-supplied
+// `mimetype`/extension alone (the previous approach) is spoofable —
+// a renamed/relabeled malicious file would have sailed through.
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
-    filename: (_req, file, cb) => {
-      const ext = (extname(file.originalname) || '.bin').toLowerCase();
-      cb(null, `${Date.now()}-${randomUUID().slice(0, 8)}${ext}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 }, // 8MB
-  fileFilter: (_req, file, cb) => {
-    if (/^image\/(png|jpe?g|webp|gif|svg\+xml)$/i.test(file.mimetype)) cb(null, true);
-    else cb(new Error('نوع الملف غير مدعوم - يرجى رفع صورة'));
-  },
 });
 
 const router = Router();
 router.use(requireAuth);
+router.use(auditLog);
 
 // ---- categories ----
 const CategorySchema = z.object({
@@ -136,10 +150,58 @@ router.put('/settings', async (req, res) => {
 });
 
 // ---- upload ----
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'لم يتم تحميل ملف' });
-  const url = `/uploads/${req.file.filename}`;
-  res.json({ url, filename: req.file.filename });
+
+  // Sniff the actual bytes — the client-supplied mimetype/extension is
+  // not trustworthy on its own.
+  const detected = await fileTypeFromBuffer(req.file.buffer);
+  if (!detected || !ALLOWED_EXT_BY_MIME[detected.mime]) {
+    return res.status(400).json({ error: 'نوع الملف غير مدعوم - يرجى رفع صورة (PNG, JPG, WEBP, GIF)' });
+  }
+
+  // Re-encode through sharp rather than storing the uploaded bytes
+  // as-is. This: (1) caps dimensions so a 12MP phone photo doesn't
+  // ship to every visitor, (2) recompresses to a sane size budget,
+  // (3) converts everything to .webp for consistent, small output,
+  // and (4) strips EXIF/metadata, which incidentally also discards
+  // any non-image data smuggled inside image metadata fields.
+  let optimized: Buffer;
+  try {
+    optimized = await sharp(req.file.buffer)
+      .rotate() // respect EXIF orientation before stripping metadata
+      .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch {
+    return res.status(400).json({ error: 'فشل معالجة الصورة - الملف قد يكون تالفاً' });
+  }
+
+  const filename = `${Date.now()}-${randomUUID().slice(0, 8)}.webp`;
+  const filePath = join(UPLOAD_DIR, filename);
+  try {
+    await writeFile(filePath, optimized);
+  } catch {
+    return res.status(500).json({ error: 'فشل حفظ الملف' });
+  }
+
+  const url = `/uploads/${filename}`;
+  res.json({ url, filename });
+});
+
+// ---- reviews (moderation) ----
+router.get('/reviews', async (_req, res) => res.json(await getAllReviews()));
+router.put('/reviews/:id/approve', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'id غير صالح' });
+  await approveReview(id);
+  res.json({ ok: true });
+});
+router.delete('/reviews/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'id غير صالح' });
+  await deleteReview(id);
+  res.json({ ok: true });
 });
 
 // ---- change password ----

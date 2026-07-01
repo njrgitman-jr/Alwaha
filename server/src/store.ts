@@ -28,6 +28,7 @@ export type Package = {
   image_url: string | null;
   components: string[]; gifts: string[];
   display_order: number; visible: boolean;
+  rating_value?: number | null; rating_count?: number;
 };
 
 export type Accessory = {
@@ -36,6 +37,18 @@ export type Accessory = {
   note: string | null; free_shipping: boolean;
   image_url: string | null;
   display_order: number; visible: boolean;
+  rating_value?: number | null; rating_count?: number;
+};
+
+export type Review = {
+  id: number;
+  item_type: 'package' | 'accessory';
+  item_slug: string;
+  customer_name: string;
+  rating: number;
+  comment: string | null;
+  approved: boolean;
+  created_at: string | Date;
 };
 
 type JsonShape = {
@@ -56,6 +69,7 @@ type JsonShape = {
     image_url?: string | null;
     display_order: number; visible: boolean;
   }>;
+  reviews?: Review[];
 };
 
 async function loadJson(): Promise<JsonShape> {
@@ -66,6 +80,36 @@ async function loadJson(): Promise<JsonShape> {
 
 async function saveJson(data: JsonShape) {
   await writeFile(RUNTIME_PATH, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+// Builds a slug -> {avg, count} map from *approved* reviews only, so a
+// flood of pending/unmoderated reviews can't move the displayed rating.
+function ratingMapFromReviews(reviews: Review[], itemType: 'package' | 'accessory'): Map<string, { avg: number; count: number }> {
+  const map = new Map<string, { sum: number; count: number }>();
+  for (const r of reviews) {
+    if (r.item_type !== itemType || !r.approved) continue;
+    const cur = map.get(r.item_slug) ?? { sum: 0, count: 0 };
+    cur.sum += Number(r.rating);
+    cur.count += 1;
+    map.set(r.item_slug, cur);
+  }
+  const out = new Map<string, { avg: number; count: number }>();
+  for (const [slug, { sum, count }] of map) out.set(slug, { avg: Math.round((sum / count) * 10) / 10, count });
+  return out;
+}
+
+async function ratingMapFromDb(itemType: 'package' | 'accessory'): Promise<Map<string, { avg: number; count: number }>> {
+  const rows = await getDb()('reviews')
+    .where({ item_type: itemType, approved: true })
+    .groupBy('item_slug')
+    .select('item_slug')
+    .avg({ avg_rating: 'rating' })
+    .count({ cnt: 'rating' });
+  const out = new Map<string, { avg: number; count: number }>();
+  for (const r of rows as any[]) {
+    out.set(r.item_slug, { avg: Math.round(Number(r.avg_rating) * 10) / 10, count: Number(r.cnt) });
+  }
+  return out;
 }
 
 // ---------- SETTINGS ----------
@@ -120,13 +164,29 @@ export async function upsertCategory(c: Category) {
 export async function deleteCategory(slug: string) {
   if (useJsonFallback()) {
     const data = await loadJson();
+    const inUse =
+      data.packages.some(p => p.category_slug === slug) ||
+      data.accessories.some(a => a.category_slug === slug);
+    if (inUse) {
+      const err: any = new Error('لا يمكن حذف هذا التصنيف لأنه يحتوي على منتجات أو ملحقات. احذفها أو نقلها أولاً');
+      err.status = 409;
+      throw err;
+    }
     data.categories = data.categories.filter(c => c.slug !== slug);
-    // also detach any products/accessories from this category? we leave them but they won't surface
     await saveJson(data);
     return;
   }
-  // products & accessories reference this slug; admin should clean those first
-  await getDb()('categories').where({ slug }).del();
+  try {
+    await getDb()('categories').where({ slug }).del();
+  } catch (e: any) {
+    // mssql FK violation -> friendly message instead of raw SQL error
+    if (e?.number === 547 || /REFERENCE constraint/i.test(e?.message ?? '')) {
+      const err: any = new Error('لا يمكن حذف هذا التصنيف لأنه يحتوي على منتجات أو ملحقات. احذفها أو نقلها أولاً');
+      err.status = 409;
+      throw err;
+    }
+    throw e;
+  }
 }
 
 // ---------- PACKAGES ----------
@@ -134,6 +194,7 @@ export async function deleteCategory(slug: string) {
 export async function getPackages(opts?: { includeHidden?: boolean }): Promise<Package[]> {
   if (useJsonFallback()) {
     const data = await loadJson();
+    const ratingMap = ratingMapFromReviews(data.reviews ?? [], 'package');
     const all = data.packages.map(p => ({
       slug: p.slug, category_slug: p.category_slug, name: p.name,
       price_new: p.price_new, price_old: p.price_old ?? null, currency: p.currency,
@@ -141,17 +202,21 @@ export async function getPackages(opts?: { includeHidden?: boolean }): Promise<P
       image_url: p.image_url ?? null,
       components: p.components ?? [], gifts: p.gifts ?? [],
       display_order: p.display_order, visible: p.visible,
+      rating_value: ratingMap.get(p.slug)?.avg ?? null,
+      rating_count: ratingMap.get(p.slug)?.count ?? 0,
     }));
     const filtered = opts?.includeHidden ? all : all.filter(p => p.visible);
     return filtered.sort((a, b) => a.display_order - b.display_order);
   }
   let q = getDb()('packages').orderBy('display_order');
   if (!opts?.includeHidden) q = q.where('visible', true);
-  const rows = await q;
+  const [rows, ratingMap] = await Promise.all([q, ratingMapFromDb('package')]);
   return rows.map((r: any) => ({
     ...r,
     components: r.components_json ? JSON.parse(r.components_json) : [],
     gifts: r.gifts_json ? JSON.parse(r.gifts_json) : [],
+    rating_value: ratingMap.get(r.slug)?.avg ?? null,
+    rating_count: ratingMap.get(r.slug)?.count ?? 0,
   })) as Package[];
 }
 
@@ -200,14 +265,25 @@ export async function deletePackage(slug: string) {
 
 export async function getAccessories(opts?: { includeHidden?: boolean }): Promise<Accessory[]> {
   if (useJsonFallback()) {
-    const all = (await loadJson()).accessories
-      .map(a => ({ ...a, note: a.note ?? null, image_url: a.image_url ?? null }));
+    const data = await loadJson();
+    const ratingMap = ratingMapFromReviews(data.reviews ?? [], 'accessory');
+    const all = data.accessories
+      .map(a => ({
+        ...a, note: a.note ?? null, image_url: a.image_url ?? null,
+        rating_value: ratingMap.get(a.slug)?.avg ?? null,
+        rating_count: ratingMap.get(a.slug)?.count ?? 0,
+      }));
     const filtered = opts?.includeHidden ? all : all.filter(a => a.visible);
     return filtered.sort((a, b) => a.display_order - b.display_order);
   }
   let q = getDb()<Accessory>('accessories').orderBy('display_order');
   if (!opts?.includeHidden) q = q.where('visible', true);
-  return q;
+  const [rows, ratingMap] = await Promise.all([q, ratingMapFromDb('accessory')]);
+  return rows.map(r => ({
+    ...r,
+    rating_value: ratingMap.get(r.slug)?.avg ?? null,
+    rating_count: ratingMap.get(r.slug)?.count ?? 0,
+  }));
 }
 
 export async function upsertAccessory(a: Accessory) {
@@ -246,4 +322,66 @@ export async function updateAdminPassword(username: string, newPasswordHash: str
   if (useJsonFallback()) return false; // not supported in fallback mode (env-driven)
   const n = await getDb()('admin_users').where({ username }).update({ password_hash: newPasswordHash });
   return n > 0;
+}
+
+// ---------- REVIEWS ----------
+
+export async function getApprovedReviews(itemType: 'package' | 'accessory', slug: string): Promise<Review[]> {
+  if (useJsonFallback()) {
+    const data = await loadJson();
+    return (data.reviews ?? [])
+      .filter(r => r.item_type === itemType && r.item_slug === slug && r.approved)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+  return getDb()<Review>('reviews')
+    .where({ item_type: itemType, item_slug: slug, approved: true })
+    .orderBy('created_at', 'desc');
+}
+
+// Admin view: everything, pending included, newest first.
+export async function getAllReviews(): Promise<Review[]> {
+  if (useJsonFallback()) {
+    const data = await loadJson();
+    return [...(data.reviews ?? [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+  return getDb()<Review>('reviews').orderBy('created_at', 'desc');
+}
+
+export async function createReview(input: {
+  item_type: 'package' | 'accessory'; item_slug: string;
+  customer_name: string; rating: number; comment: string | null;
+}): Promise<Review> {
+  if (useJsonFallback()) {
+    const data = await loadJson();
+    const existingIds = (data.reviews ?? []).map(r => r.id);
+    const nextId = existingIds.length ? Math.max(...existingIds) + 1 : 1;
+    const row: Review = { id: nextId, ...input, approved: false, created_at: new Date().toISOString() };
+    data.reviews = [...(data.reviews ?? []), row];
+    await saveJson(data);
+    return row;
+  }
+  const [row] = await getDb()('reviews')
+    .insert({ ...input, approved: false, created_at: new Date() })
+    .returning(['id', 'item_type', 'item_slug', 'customer_name', 'rating', 'comment', 'approved', 'created_at']);
+  return row as Review;
+}
+
+export async function approveReview(id: number): Promise<void> {
+  if (useJsonFallback()) {
+    const data = await loadJson();
+    data.reviews = (data.reviews ?? []).map(r => r.id === id ? { ...r, approved: true } : r);
+    await saveJson(data);
+    return;
+  }
+  await getDb()('reviews').where({ id }).update({ approved: true });
+}
+
+export async function deleteReview(id: number): Promise<void> {
+  if (useJsonFallback()) {
+    const data = await loadJson();
+    data.reviews = (data.reviews ?? []).filter(r => r.id !== id);
+    await saveJson(data);
+    return;
+  }
+  await getDb()('reviews').where({ id }).del();
 }

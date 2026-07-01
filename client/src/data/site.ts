@@ -25,6 +25,8 @@ export type Package = {
   gifts?: string[];
   warranty: string;
   imageUrl?: string;
+  rating?: number;
+  ratingCount?: number;
 };
 
 export type Accessory = {
@@ -37,6 +39,8 @@ export type Accessory = {
   variants?: string[];
   freeShipping?: boolean;
   imageUrl?: string;
+  rating?: number;
+  ratingCount?: number;
 };
 
 export type Category = {

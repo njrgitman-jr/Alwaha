@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Package } from '../data/site';
 import { priceFmt } from '../data/site';
 import HoverZoomImage from './HoverZoom';
+import StarRating from './StarRating';
 
 export default function ProductCard({ p }: { p: Package }) {
   const discount = p.priceOld && p.priceNew > 0 ? Math.round(((p.priceOld - p.priceNew) / p.priceOld) * 100) : 0;
@@ -24,6 +25,11 @@ export default function ProductCard({ p }: { p: Package }) {
         }
       />
       <h3 className="font-bold text-sm leading-snug text-ink-900 line-clamp-2 min-h-[2.5rem] group-hover:text-brand-700 transition-colors">{p.name}</h3>
+      {p.rating != null && (
+        <div className="mt-1">
+          <StarRating value={p.rating} count={p.ratingCount} />
+        </div>
+      )}
       <div className="mt-2 flex items-baseline gap-2 flex-wrap">
         <span className="price-new text-lg">{priceFmt(p.priceNew)}</span>
         {p.priceOld && <span className="price-old">{priceFmt(p.priceOld)}</span>}

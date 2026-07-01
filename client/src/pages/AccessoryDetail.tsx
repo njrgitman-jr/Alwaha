@@ -1,15 +1,20 @@
 import { Link, useParams } from 'react-router-dom';
+import { useState } from 'react';
 import { priceFmt, waLink } from '../data/site';
 import { useCatalog } from '../lib/useCatalog';
 import { useSettings } from '../lib/useSettings';
 import AccessoryCard from '../components/AccessoryCard';
 import HoverZoomImage from '../components/HoverZoom';
+import StarRating from '../components/StarRating';
+import ReviewsList from '../components/ReviewsList';
+import ReviewForm from '../components/ReviewForm';
 
 export default function AccessoryDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { accessories, categories } = useCatalog();
   const s = useSettings();
   const a = accessories.find(x => x.slug === slug);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   if (!a) {
     return (
@@ -65,6 +70,11 @@ export default function AccessoryDetail() {
         <div className="card p-6">
           <div className="text-xs text-ink-500">{cat?.title ?? a.category}</div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-ink-900 mt-1 leading-tight">{a.name}</h1>
+          {a.rating != null && (
+            <div className="mt-2">
+              <StarRating value={a.rating} count={a.ratingCount} size="md" />
+            </div>
+          )}
 
           <div className="mt-4 flex items-baseline gap-3 flex-wrap">
             <span className="price-new text-3xl">{priceFmt(a.price)}</span>
@@ -130,6 +140,16 @@ export default function AccessoryDetail() {
               <dd className="font-semibold text-ink-800">{a.freeShipping ? 'مجاني' : 'حسب الموقع'}</dd>
             </div>
           </dl>
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="section-title text-xl mb-4">آراء العملاء</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <ReviewsList itemType="accessory" itemSlug={a.slug} refreshKey={refreshKey} />
+          </div>
+          <ReviewForm itemType="accessory" itemSlug={a.slug} onSubmitted={() => setRefreshKey(k => k + 1)} />
         </div>
       </section>
 

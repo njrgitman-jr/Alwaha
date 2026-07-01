@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
+    "test": "vitest run",
     "db:migrate": "tsx ./node_modules/knex/bin/cli.js --knexfile knexfile.ts migrate:latest",
     "db:rollback": "tsx ./node_modules/knex/bin/cli.js --knexfile knexfile.ts migrate:rollback",
     "db:seed": "tsx ./node_modules/knex/bin/cli.js --knexfile knexfile.ts seed:run",
@@ -17,10 +18,15 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^7.4.1",
+    "file-type": "^19.6.0",
+    "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.3",
     "knex": "^3.2.10",
+    "morgan": "^1.10.0",
     "mssql": "^12.5.2",
     "multer": "^2.1.1",
+    "sharp": "^0.33.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -28,9 +34,12 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.9",
     "@types/multer": "^2.1.0",
     "@types/node": "^25.7.0",
+    "supertest": "^7.0.0",
     "tsx": "^4.21.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^2.1.8"
   }
 }

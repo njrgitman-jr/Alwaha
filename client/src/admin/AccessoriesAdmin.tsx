@@ -7,6 +7,7 @@ const empty: ServerAccessory = {
   slug: '', category_slug: 'central', name: '',
   price: 0, currency: 'JD', note: null, free_shipping: false,
   image_url: null, display_order: 0, visible: true,
+  rating_value: null, rating_count: 0,
 };
 
 export default function AccessoriesAdmin() {
@@ -133,6 +134,9 @@ export default function AccessoriesAdmin() {
                     {Number(a.price) > 0 ? `${a.price} دينار` : '—'}
                   </span>
                   {a.free_shipping && <span className="chip-accent">توصيل مجاني</span>}
+                  {a.rating_value != null && (
+                    <span className="chip">⭐ {a.rating_value.toFixed(1)} ({a.rating_count})</span>
+                  )}
                 </div>
               </div>
               <VisibilityToggle visible={a.visible} onChange={() => toggleVisible(a)} />

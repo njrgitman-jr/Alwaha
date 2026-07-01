@@ -1,22 +1,27 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { clearAdminToken, getAdminToken } from '../lib/api';
+import { admin, clearAdminToken, getAdminToken } from '../lib/api';
 import CategoriesAdmin from './CategoriesAdmin';
 import PackagesAdmin from './PackagesAdmin';
 import AccessoriesAdmin from './AccessoriesAdmin';
 import SettingsAdmin from './SettingsAdmin';
+import ReviewsAdmin from './ReviewsAdmin';
 
-function AdminHome() {
+function AdminHome({ pendingReviews }: { pendingReviews: number }) {
   const tiles = [
     { to: '/admin/categories',  icon: '🗂️', title: 'الفئات',     desc: 'إضافة وإدارة فئات المنتجات' },
     { to: '/admin/packages',    icon: '📦', title: 'الباقات',    desc: 'إضافة، تعديل، وحذف باقات الفلاتر' },
     { to: '/admin/accessories', icon: '🔧', title: 'القطع',      desc: 'الخزانات، الحنفيات، أجهزة الفحص، والحشوات' },
+    { to: '/admin/reviews',     icon: '⭐', title: 'التقييمات',  desc: pendingReviews > 0 ? `${pendingReviews} بانتظار المراجعة` : 'تقييمات العملاء' },
     { to: '/admin/settings',    icon: '⚙️', title: 'الإعدادات',  desc: 'الهاتف، الإيميل، الهيرو، من نحن، كلمة المرور' },
   ];
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
       {tiles.map(t => (
-        <Link key={t.to} to={t.to} className="card card-hover p-5">
+        <Link key={t.to} to={t.to} className="card card-hover p-5 relative">
+          {t.to === '/admin/reviews' && pendingReviews > 0 && (
+            <span className="absolute top-3 left-3 chip-warn text-[11px]">{pendingReviews}</span>
+          )}
           <div className="text-3xl">{t.icon}</div>
           <div className="font-extrabold text-ink-900 mt-2">{t.title}</div>
           <p className="text-sm text-ink-500 mt-1">{t.desc}</p>
@@ -30,11 +35,17 @@ export default function AdminDashboard() {
   const nav = useNavigate();
   const loc = useLocation();
   const [ready, setReady] = useState(false);
+  const [pendingReviews, setPendingReviews] = useState(0);
 
   useEffect(() => {
     if (!getAdminToken()) nav('/admin/login', { replace: true });
     else setReady(true);
   }, [nav]);
+
+  useEffect(() => {
+    if (!ready) return;
+    admin.reviews().then(rs => setPendingReviews(rs.filter(r => !r.approved).length)).catch(() => {});
+  }, [ready, loc.pathname]);
 
   if (!ready) return null;
   if (!getAdminToken()) return <Navigate to="/admin/login" replace />;
@@ -49,6 +60,7 @@ export default function AdminDashboard() {
     { to: '/admin/categories',  label: 'الفئات',     icon: '🗂️' },
     { to: '/admin/packages',    label: 'الباقات',    icon: '📦' },
     { to: '/admin/accessories', label: 'القطع',      icon: '🔧' },
+    { to: '/admin/reviews',     label: 'التقييمات',  icon: '⭐' },
     { to: '/admin/settings',    label: 'الإعدادات',  icon: '⚙️' },
   ];
 
@@ -68,10 +80,15 @@ export default function AdminDashboard() {
               const active = t.exact ? loc.pathname === t.to : loc.pathname.startsWith(t.to);
               return (
                 <Link key={t.to} to={t.to}
-                  className={`px-3 py-2 rounded-lg font-semibold text-sm transition ${
+                  className={`relative px-3 py-2 rounded-lg font-semibold text-sm transition ${
                     active ? 'bg-brand-50 text-brand-700' : 'text-ink-700 hover:bg-ink-50'
                   }`}>
                   {t.icon} {t.label}
+                  {t.to === '/admin/reviews' && pendingReviews > 0 && (
+                    <span className="absolute -top-1 -left-1 bg-rose-600 text-white text-[10px] leading-none rounded-full w-4 h-4 flex items-center justify-center">
+                      {pendingReviews}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -83,10 +100,11 @@ export default function AdminDashboard() {
 
       <main className="mx-auto max-w-7xl w-full px-4 py-6 flex-1">
         <Routes>
-          <Route index element={<AdminHome />} />
+          <Route index element={<AdminHome pendingReviews={pendingReviews} />} />
           <Route path="categories"  element={<CategoriesAdmin />} />
           <Route path="packages"    element={<PackagesAdmin />} />
           <Route path="accessories" element={<AccessoriesAdmin />} />
+          <Route path="reviews"     element={<ReviewsAdmin />} />
           <Route path="settings"    element={<SettingsAdmin />} />
         </Routes>
       </main>

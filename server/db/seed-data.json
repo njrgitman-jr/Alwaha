@@ -21,17 +21,44 @@
     "about_text": "نحن متخصصون في توفير أفضل حلول تنقية المياه للمنازل والمنشآت في الأردن. منتجاتنا من أفضل الماركات (تايواني نخب أول، فيتنامي حفر، صيني)، ومكوناتها أصلية ومختارة بعناية. نقدم خدمة تركيب احترافية، صيانة دورية، وقطع غيار متوفرة دائماً. هدفنا أن نوصل لكل بيت أردني مياه شرب نقية وآمنة بسعر معقول وخدمة لا تخذلكم."
   },
   "categories": [
-    { "slug": "home",       "title": "فلاتر مياه منزلية", "description": "باقات متكاملة لمياه شرب نقية في منزلك مع مكونات أصلية وكفالة", "icon": "🏠", "image_url": "", "display_order": 1, "visible": true },
-    { "slug": "central",    "title": "فلاتر مياه مركزية", "description": "فلاتر ثلاثية جامبو لتنقية مياه الخزان والشبكة الرئيسية", "icon": "🏢", "image_url": "", "display_order": 2, "visible": true },
-    { "slug": "industrial", "title": "فلاتر مياه صناعية", "description": "حلول صناعية للمصانع والمنشآت بسعات وقدرات متعددة", "icon": "🏭", "image_url": "", "display_order": 3, "visible": true }
+    {
+      "slug": "home",
+      "title": "فلاتر مياه منزلية",
+      "description": "باقات متكاملة لمياه شرب نقية في منزلك مع مكونات أصلية وكفالة",
+      "icon": "🏠",
+      "image_url": "",
+      "display_order": 1,
+      "visible": true
+    },
+    {
+      "slug": "central",
+      "title": "فلاتر مياه مركزية",
+      "description": "فلاتر ثلاثية جامبو لتنقية مياه الخزان والشبكة الرئيسية",
+      "icon": "🏢",
+      "image_url": "",
+      "display_order": 2,
+      "visible": true
+    },
+    {
+      "slug": "industrial",
+      "title": "فلاتر مياه صناعية",
+      "description": "حلول صناعية للمصانع والمنشآت بسعات وقدرات متعددة",
+      "icon": "🏭",
+      "image_url": "",
+      "display_order": 3,
+      "visible": true
+    }
   ],
   "packages": [
     {
       "slug": "home-7stage-taiwan",
       "category_slug": "home",
       "name": "باقة الفلتر المنزلي - 7 مراحل تايواني نخب أول",
-      "price_new": 135, "price_old": 150, "currency": "JD",
-      "badge": "الأكثر طلباً", "warranty": "كفالة سنتين",
+      "price_new": 135,
+      "price_old": 150,
+      "currency": "JD",
+      "badge": "الأكثر طلباً",
+      "warranty": "كفالة سنتين",
       "image_url": "",
       "components": [
         "فلتر 7 مراحل تايوان حفر نخب أول",
@@ -43,15 +70,21 @@
         "مضخة 125 psi",
         "جهاز TDS لفحص الأملاح في الماء"
       ],
-      "gifts": ["قارورة سحرية هدية"],
-      "display_order": 1, "visible": true
+      "gifts": [
+        "قارورة سحرية هدية"
+      ],
+      "display_order": 1,
+      "visible": true
     },
     {
       "slug": "home-6stage-taiwan-premium",
       "category_slug": "home",
       "name": "باقة الفلتر المنزلي المميزة - 6 مراحل تايواني نخب أول",
-      "price_new": 150, "price_old": 175, "currency": "JD",
-      "badge": "مميزة", "warranty": "كفالة سنتين",
+      "price_new": 150,
+      "price_old": 175,
+      "currency": "JD",
+      "badge": "مميزة",
+      "warranty": "كفالة سنتين",
       "image_url": "",
       "components": [
         "فلتر 6 مراحل تايوان حفر نخب أول",
@@ -66,15 +99,21 @@
         "محبس خلط",
         "جهاز TDS لفحص الأملاح في الماء"
       ],
-      "gifts": ["قارورة سحرية هدية"],
-      "display_order": 2, "visible": true
+      "gifts": [
+        "قارورة سحرية هدية"
+      ],
+      "display_order": 2,
+      "visible": true
     },
     {
       "slug": "home-7stage-vietnam",
       "category_slug": "home",
       "name": "باقة الفلتر المنزلي الاقتصادية - 7 مراحل فيتنامي",
-      "price_new": 90, "price_old": 120, "currency": "JD",
-      "badge": "اقتصادية", "warranty": "كفالة سنة كاملة",
+      "price_new": 90,
+      "price_old": 120,
+      "currency": "JD",
+      "badge": "اقتصادية",
+      "warranty": "كفالة سنة كاملة",
       "image_url": "",
       "components": [
         "فلتر 7 مراحل فيتنامي حفر",
@@ -83,15 +122,21 @@
         "ممبرين 75 جالون",
         "مضخة 125 psi"
       ],
-      "gifts": ["قارورة سحرية هدية"],
-      "display_order": 3, "visible": true
+      "gifts": [
+        "قارورة سحرية هدية"
+      ],
+      "display_order": 3,
+      "visible": true
     },
     {
       "slug": "central-jumbo-triple",
       "category_slug": "central",
       "name": "فلتر ثلاثي جامبو لتنقية مياه الخزان",
-      "price_new": 95, "price_old": 110, "currency": "JD",
-      "badge": "مركزي", "warranty": "كفالة سنة",
+      "price_new": 95,
+      "price_old": 110,
+      "currency": "JD",
+      "badge": "مركزي",
+      "warranty": "كفالة سنة",
       "image_url": "",
       "components": [
         "ساعتين لقياس الضغط",
@@ -100,18 +145,113 @@
         "دهان حراري أسود مقاوم للصدأ وحرارة الشمس"
       ],
       "gifts": [],
-      "display_order": 1, "visible": true
+      "display_order": 1,
+      "visible": true
     }
   ],
   "accessories": [
-    { "slug": "tank-taiwan-5gal",   "category_slug": "central", "name": "خزان تايوان 5 جالون",   "price": 25, "currency": "JD", "free_shipping": false, "image_url": "", "display_order": 1, "visible": true },
-    { "slug": "tank-chinese-4gal",  "category_slug": "central", "name": "خزان صيني 4 جالون",   "price": 18, "currency": "JD", "free_shipping": false, "image_url": "", "display_order": 2, "visible": true },
-    { "slug": "tank-chinese-3-2gal","category_slug": "central", "name": "خزان صيني 3.2 جالون", "price": 15, "currency": "JD", "free_shipping": false, "image_url": "", "display_order": 3, "visible": true },
-    { "slug": "faucet-chinese-light","category_slug": "central","name": "حنفية صيني خفيف",    "price": 4,  "currency": "JD", "free_shipping": false, "image_url": "", "display_order": 4, "visible": true },
-    { "slug": "faucet-chrome",      "category_slug": "central", "name": "حنفية كروم",          "price": 7,  "currency": "JD", "free_shipping": false, "image_url": "", "display_order": 5, "visible": true },
-    { "slug": "faucet-steel-304",   "category_slug": "central", "name": "حنفية ستيل 304",      "price": 15, "currency": "JD", "free_shipping": false, "image_url": "", "display_order": 6, "visible": true },
-    { "slug": "tds-meter",          "category_slug": "central", "name": "جهاز فحص الأملاح TDS","price": 9, "currency": "JD", "free_shipping": true,  "image_url": "", "note": "التوصيل مجاني", "display_order": 7, "visible": true },
-    { "slug": "ph-meter",           "category_slug": "central", "name": "جهاز فحص الحموضة PH", "price": 12,"currency": "JD", "free_shipping": true,  "image_url": "", "note": "قارورة سحرية - التوصيل مجاني (8 لتر لربط الفلتر بالكولر)", "display_order": 8, "visible": true },
-    { "slug": "cartridge-vietnam-set","category_slug": "central","name": "طقم حشوات فلاتر فيتنامي حفر","price": 3,"currency": "JD","free_shipping": false,"image_url": "","note": "سعر الطقم الواحد","display_order": 9,"visible": true }
-  ]
+    {
+      "slug": "tank-taiwan-5gal",
+      "category_slug": "central",
+      "name": "خزان تايوان 5 جالون",
+      "price": 25,
+      "currency": "JD",
+      "free_shipping": false,
+      "image_url": "",
+      "display_order": 1,
+      "visible": true
+    },
+    {
+      "slug": "tank-chinese-4gal",
+      "category_slug": "central",
+      "name": "خزان صيني 4 جالون",
+      "price": 18,
+      "currency": "JD",
+      "free_shipping": false,
+      "image_url": "",
+      "display_order": 2,
+      "visible": true
+    },
+    {
+      "slug": "tank-chinese-3-2gal",
+      "category_slug": "central",
+      "name": "خزان صيني 3.2 جالون",
+      "price": 15,
+      "currency": "JD",
+      "free_shipping": false,
+      "image_url": "",
+      "display_order": 3,
+      "visible": true
+    },
+    {
+      "slug": "faucet-chinese-light",
+      "category_slug": "central",
+      "name": "حنفية صيني خفيف",
+      "price": 4,
+      "currency": "JD",
+      "free_shipping": false,
+      "image_url": "",
+      "display_order": 4,
+      "visible": true
+    },
+    {
+      "slug": "faucet-chrome",
+      "category_slug": "central",
+      "name": "حنفية كروم",
+      "price": 7,
+      "currency": "JD",
+      "free_shipping": false,
+      "image_url": "",
+      "display_order": 5,
+      "visible": true
+    },
+    {
+      "slug": "faucet-steel-304",
+      "category_slug": "central",
+      "name": "حنفية ستيل 304",
+      "price": 15,
+      "currency": "JD",
+      "free_shipping": false,
+      "image_url": "",
+      "display_order": 6,
+      "visible": true
+    },
+    {
+      "slug": "tds-meter",
+      "category_slug": "central",
+      "name": "جهاز فحص الأملاح TDS",
+      "price": 9,
+      "currency": "JD",
+      "free_shipping": true,
+      "image_url": "",
+      "note": "التوصيل مجاني",
+      "display_order": 7,
+      "visible": true
+    },
+    {
+      "slug": "ph-meter",
+      "category_slug": "central",
+      "name": "جهاز فحص الحموضة PH",
+      "price": 12,
+      "currency": "JD",
+      "free_shipping": true,
+      "image_url": "",
+      "note": "قارورة سحرية - التوصيل مجاني (8 لتر لربط الفلتر بالكولر)",
+      "display_order": 8,
+      "visible": true
+    },
+    {
+      "slug": "cartridge-vietnam-set",
+      "category_slug": "central",
+      "name": "طقم حشوات فلاتر فيتنامي حفر",
+      "price": 3,
+      "currency": "JD",
+      "free_shipping": false,
+      "image_url": "",
+      "note": "سعر الطقم الواحد",
+      "display_order": 9,
+      "visible": true
+    }
+  ],
+  "reviews": []
 }

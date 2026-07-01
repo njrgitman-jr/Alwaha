@@ -1,14 +1,19 @@
 import { Link, useParams } from 'react-router-dom';
+import { useState } from 'react';
 import { priceFmt, waLink } from '../data/site';
 import { useCatalog } from '../lib/useCatalog';
 import { useSettings } from '../lib/useSettings';
 import HoverZoomImage from '../components/HoverZoom';
+import StarRating from '../components/StarRating';
+import ReviewsList from '../components/ReviewsList';
+import ReviewForm from '../components/ReviewForm';
 
 export default function Product() {
   const { slug } = useParams();
   const { packages, categories } = useCatalog();
   const s = useSettings();
   const p = packages.find(x => x.slug === slug);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   if (!p) {
     return (
@@ -61,6 +66,11 @@ export default function Product() {
         <div className="card p-6">
           <div className="text-xs text-ink-500">{cat?.title ?? p.category}</div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-ink-900 mt-1 leading-tight">{p.name}</h1>
+          {p.rating != null && (
+            <div className="mt-2">
+              <StarRating value={p.rating} count={p.ratingCount} size="md" />
+            </div>
+          )}
 
           <div className="mt-4 flex items-baseline gap-3 flex-wrap">
             <span className="price-new text-3xl">{priceFmt(p.priceNew)}</span>
@@ -124,6 +134,16 @@ export default function Product() {
               <li>• خدمة عملاء فورية</li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="section-title text-xl mb-4">آراء العملاء</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <ReviewsList itemType="package" itemSlug={p.slug} refreshKey={refreshKey} />
+          </div>
+          <ReviewForm itemType="package" itemSlug={p.slug} onSubmitted={() => setRefreshKey(k => k + 1)} />
         </div>
       </section>
     </main>
