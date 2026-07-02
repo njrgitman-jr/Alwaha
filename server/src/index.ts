@@ -14,8 +14,13 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
 }
 
 if (!useJsonFallback()) {
-  if (!process.env.DB_PASSWORD || process.env.DB_PASSWORD.startsWith('__')) {
-    console.error('✗ USE_JSON_FALLBACK=false but DB_PASSWORD is missing/placeholder. Refusing to start.');
+  // Either a full DATABASE_URL (Render/cloud) or discrete DB_PASSWORD (local
+  // dev with DB_HOST/DB_USER/etc) must be present — see server/knexfile.ts.
+  const hasDatabaseUrl = !!process.env.DATABASE_URL;
+  const hasDbPassword = !!process.env.DB_PASSWORD && !process.env.DB_PASSWORD.startsWith('__');
+
+  if (!hasDatabaseUrl && !hasDbPassword) {
+    console.error('✗ USE_JSON_FALLBACK=false but neither DATABASE_URL nor DB_PASSWORD is set. Refusing to start.');
     process.exit(1);
   }
 }
