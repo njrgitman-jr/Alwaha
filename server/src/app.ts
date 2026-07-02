@@ -20,10 +20,20 @@ export function createApp() {
   const app = express();
   const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
 
+  // Render (and most PaaS hosts) sit behind a reverse proxy, so Express needs
+  // to trust the X-Forwarded-For header it sets — otherwise express-rate-limit
+  // can't tell real client IPs apart and throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+  if (IS_PROD) app.set('trust proxy', 1);
+
+  // CLIENT_ORIGIN can be a single URL or a comma-separated list, so staging +
+  // production (and any other known frontend URL) can all be allowed without
+  // juggling one env var every time a new one shows up.
+  const explicitOrigins = CLIENT_ORIGIN.split(',').map(o => o.trim()).filter(Boolean);
+
   const allowedOrigins = IS_PROD
-    ? [CLIENT_ORIGIN]
+    ? explicitOrigins
     : [
-        CLIENT_ORIGIN,
+        ...explicitOrigins,
         'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175',
         'http://127.0.0.1:5173', 'http://127.0.0.1:5174', 'http://127.0.0.1:5175',
       ];
@@ -32,7 +42,20 @@ export function createApp() {
   app.use(morgan(IS_PROD ? 'combined' : 'dev', {
     skip: () => process.env.NODE_ENV === 'test',
   }));
-  app.use(cors({ origin: allowedOrigins }));
+  app.use(cors({
+    origin(origin, callback) {
+      // Same-origin / non-browser requests (curl, server-to-server) send no Origin header.
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // In production, also allow any Vercel preview/staging deployment whose
+      // URL starts with this project's name (e.g. alwaha.vercel.app,
+      // alwaha-staging.vercel.app, alwaha-git-<branch>-<user>.vercel.app),
+      // so new preview URLs don't require an env var update each time —
+      // without opening this up to unrelated Vercel-hosted sites.
+      if (IS_PROD && /^https:\/\/alwaha[a-z0-9-]*\.vercel\.app$/.test(origin)) return callback(null, true);
+      callback(new Error(`Not allowed by CORS: ${origin}`));
+    },
+  }));
   app.use(express.json({ limit: '2mb' }));
 
   const generalLimiter = rateLimit({
