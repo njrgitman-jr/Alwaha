@@ -3,15 +3,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import publicRoutes from './routes/public.js';
 import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import { useJsonFallback } from './db.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { getImage } from './imageStore.js';
 
 export function createApp() {
   const NODE_ENV = process.env.NODE_ENV ?? 'development';
@@ -75,9 +71,23 @@ export function createApp() {
   });
   app.use('/api/auth/login', loginLimiter);
 
-  app.use('/uploads', express.static(join(__dirname, '..', 'public', 'uploads'), {
-    setHeaders: (res) => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'),
-  }));
+  // Images are stored in the DB (see src/imageStore.ts), not on local disk —
+  // Render's filesystem is ephemeral and wipes public/uploads on every
+  // redeploy/restart. This route keeps the same /uploads/<filename> URL
+  // shape the client already expects, but streams bytes from the DB.
+  app.get('/uploads/:filename', async (req, res) => {
+    try {
+      const image = await getImage(req.params.filename);
+      if (!image) return res.status(404).end();
+      res.setHeader('Content-Type', image.mime);
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.send(image.data);
+    } catch (err) {
+      console.error('[image serve error]', err);
+      res.status(500).end();
+    }
+  });
 
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true, mode: useJsonFallback() ? 'json-fallback' : 'sql-server' });

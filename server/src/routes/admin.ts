@@ -2,10 +2,6 @@ import { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import multer from 'multer';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { existsSync, mkdirSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { fileTypeFromBuffer } from 'file-type';
 import sharp from 'sharp';
@@ -19,15 +15,7 @@ import {
   getAllReviews, approveReview, deleteReview,
 } from '../store.js';
 import { useJsonFallback } from '../db.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-// Allow tests to redirect uploads to a temp dir instead of polluting
-// the real public/uploads folder.
-const UPLOAD_DIR = process.env.UPLOAD_DIR_OVERRIDE
-  ? process.env.UPLOAD_DIR_OVERRIDE
-  : join(__dirname, '..', '..', 'public', 'uploads');
-if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
+import { saveImage } from '../imageStore.js';
 
 // SVG is deliberately NOT allowed: it's XML and can carry embedded
 // <script>, making it a stored-XSS vector once served back from
@@ -178,9 +166,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 
   const filename = `${Date.now()}-${randomUUID().slice(0, 8)}.webp`;
-  const filePath = join(UPLOAD_DIR, filename);
   try {
-    await writeFile(filePath, optimized);
+    await saveImage(filename, 'image/webp', optimized);
   } catch {
     return res.status(500).json({ error: 'فشل حفظ الملف' });
   }
