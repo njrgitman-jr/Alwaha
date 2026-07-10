@@ -133,7 +133,7 @@ export function waLink(message: string, whatsapp?: string) {
 }
 
 export function priceFmt(jd: number) {
-  if (jd <= 0) return '—';
+  if (jd <= 0) return 'نفذت الكمية';
   // Format with thousand-separator for readability (e.g., 1,250 دينار)
   return `${jd.toLocaleString('en-US')} دينار`;
 }
